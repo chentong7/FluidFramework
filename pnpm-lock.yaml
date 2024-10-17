@@ -356,6 +356,10 @@ importers:
         version: 5.4.5
 
   examples/apps/ai-collab:
+    dependencies:
+      '@fluid-experimental/presence':
+        specifier: workspace:~
+        version: link:../../../packages/framework/presence
     devDependencies:
       '@azure/identity':
         specifier: ^4.4.1
@@ -453,6 +457,9 @@ importers:
       rimraf:
         specifier: ^4.4.0
         version: 4.4.1
+      source-map-loader:
+        specifier: ^5.0.0
+        version: 5.0.0(webpack@5.95.0)
       tinylicious:
         specifier: ^5.0.0
         version: 5.0.0

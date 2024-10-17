@@ -35,8 +35,13 @@ import { useFluidContainerNextJs } from "@/useFluidContainerNextjs";
 import { useSharedTreeRerender } from "@/useSharedTreeRerender";
 
 // Uncomment the import line that corresponds to the server you want to use
-// import { createContainer, loadContainer, postAttach, containerIdFromUrl } from "./spe"; // eslint-disable-line import/order
-import { createContainer, loadContainer, postAttach, containerIdFromUrl } from "./tinylicious"; // eslint-disable-line import/order
+// import { createContainer, loadContainer, postAttach, containerIdFromUrl } from "./spe";
+import {
+	createContainer,
+	loadContainer,
+	postAttach,
+	containerIdFromUrl,
+} from "../tinylicious";
 
 export async function createAndInitializeContainer(): Promise<
 	IFluidContainer<typeof CONTAINER_SCHEMA>
@@ -83,7 +88,7 @@ export default function TasksListPage(): JSX.Element {
 	// const presence: IPresence = { clientId: "0a470fd8-a4d2-4029-9c80-2c423c1553fa", tenantId: "72f988bf-86f1-41af-91ab-2d7cd011db47" } as IPresence; // Replace with actual presence object
 	// const userPresence = buildUserPresence(presence);
 
-	const userId = "testing id"; // Replace with actual user ID
+	const userId = "Fluid Framework Internal Dev App";
 	const clientId = "b9178c7c-1dc5-4263-ad30-ff2615b9734b";
 	const tenantId = "59fcf6b6-a528-4f28-9ac3-521a1ae4f032";
 	// const { clientId, tenantId } = userPresence.user;
