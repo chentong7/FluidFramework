@@ -79,7 +79,7 @@ export interface TokenUsage {
  * @alpha
  */
 export interface Diff {
-    id: string;
-    type: string;
-    description: string;
+	id: string;
+	type: string;
+	description: string;
 }

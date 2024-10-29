@@ -76,10 +76,10 @@ interface GenerateTreeEditsErrorResponse {
  * The GenerateTreeEditsResponse interface defines the structure of the response object
  */
 interface GenerateTreeEditsResponse {
-    status: "success" | "failure";
-    errorMessage?: string;
-    tokenUsage: any;
-    diffs?: Diff[];
+	status: "success" | "failure";
+	errorMessage?: string;
+	tokenUsage: TokenUsage;
+	diffs?: Diff[];
 }
 
 /**
@@ -87,8 +87,10 @@ interface GenerateTreeEditsResponse {
  * an id, type (either "error" or "edit"), and description (either the error message or
  * the edit explanation).
  */
-export async function generateTreeEditsWithDiff(options: any): Promise<GenerateTreeEditsResponse> {
-    const idGenerator = new IdGenerator();
+export async function generateTreeEditsWithDiff(
+	options: GenerateTreeEditsOptions<ImplicitFieldSchema>,
+): Promise<GenerateTreeEditsResponse> {
+	const idGenerator = new IdGenerator();
 	const editLog: EditLog = [];
 	let editCount = 0;
 	let sequentialErrorCount = 0;
@@ -100,8 +102,8 @@ export async function generateTreeEditsWithDiff(options: any): Promise<GenerateT
 
 	const tokenUsage = { inputTokens: 0, outputTokens: 0 };
 
-    try {
-        for await (const edit of generateEdits(
+	try {
+		for await (const edit of generateEdits(
 			options,
 			simpleSchema,
 			idGenerator,
@@ -157,7 +159,7 @@ export async function generateTreeEditsWithDiff(options: any): Promise<GenerateT
 				};
 			}
 		}
-    } catch (error: unknown) {
+	} catch (error: unknown) {
 		if (error instanceof TokenLimitExceededError) {
 			return {
 				status: "failure",
@@ -166,25 +168,25 @@ export async function generateTreeEditsWithDiff(options: any): Promise<GenerateT
 			};
 		}
 		throw error;
-    }
+	}
 
-    // Transform editLog into diffs
-    const diffs: Diff[] = editLog.map((log, index) => ({
-        id: `diff-${index}`,
-        type: log.error ? "error" : "edit",
-        description: log.error ? log.error : log.edit.explanation,
-    }));
+	// Transform editLog into diffs
+	const diffs: Diff[] = editLog.map((log, index) => ({
+		id: `diff-${index}`,
+		type: log.error ? "error" : "edit",
+		description: log.error ? log.error : log.edit.explanation,
+	}));
 
 	if (options.dumpDebugLog ?? false) {
 		console.log(DEBUG_LOG.join("\n\n"));
 		DEBUG_LOG.length = 0;
 	}
 
-    return {
-        status: "success",
-        tokenUsage,
-        diffs,
-    };
+	return {
+		status: "success",
+		tokenUsage,
+		diffs,
+	};
 }
 
 /**

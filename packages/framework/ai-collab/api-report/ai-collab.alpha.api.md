@@ -60,6 +60,16 @@ export function createMergableDiffSeries(diffs: Difference[]): Difference[];
 export function createMergableIdDiffSeries(oldObject: unknown, diffs: Difference[], idAttributeName: string | number): Difference[];
 
 // @alpha
+export interface Diff {
+    // (undocumented)
+    description: string;
+    // (undocumented)
+    id: string;
+    // (undocumented)
+    type: string;
+}
+
+// @alpha
 export type Difference = DifferenceCreate | DifferenceRemove | DifferenceChange | DifferenceMove;
 
 // @alpha
