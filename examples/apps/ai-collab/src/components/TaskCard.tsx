@@ -48,6 +48,7 @@ import {
 	type TaskStatus,
 } from "@/types/task";
 import { useSharedTreeRerender } from "@/useSharedTreeRerender";
+import DiffViewer from "./DiffViewer";
 
 function convertSharedTreeTaskToTask(sharedTreeTask: SharedTreeTask): Task {
 	return {
@@ -493,6 +494,15 @@ export function TaskCard(props: {
 					</Stack>
 				</Stack>
 			</Stack>
+			{/* Add DiffViewer to display diffs */}
+            {props.branchDifferences && props.branchDifferences.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                    <Typography variant="h4" sx={{ mb: 2 }}>
+                        Differences
+                    </Typography>
+                    <DiffViewer diffs={props.branchDifferences} />
+                </Box>
+            )}
 		</Card>
 	);
 }

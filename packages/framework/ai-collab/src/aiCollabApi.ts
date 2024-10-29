@@ -72,3 +72,14 @@ export interface TokenUsage {
 	inputTokens: number;
 	outputTokens: number;
 }
+
+/**
+ * The Diff interface defines the structure of the "diffs" objects
+ *
+ * @alpha
+ */
+export interface Diff {
+    id: string;
+    type: string;
+    description: string;
+}

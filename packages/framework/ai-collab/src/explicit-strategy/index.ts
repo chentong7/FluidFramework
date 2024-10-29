@@ -20,7 +20,7 @@ import type {
 } from "openai/resources/index.mjs";
 import { z } from "zod";
 
-import type { OpenAiClientOptions, TokenUsage } from "../aiCollabApi.js";
+import type { Diff, OpenAiClientOptions, TokenUsage } from "../aiCollabApi.js";
 
 import { applyAgentEdit } from "./agentEditReducer.js";
 import type { EditWrapper, TreeEdit } from "./agentEditTypes.js";
@@ -70,6 +70,121 @@ interface GenerateTreeEditsErrorResponse {
 	status: "failure" | "partial-failure";
 	errorMessage: "tokenLimitExceeded" | "tooManyErrors" | "tooManyModelCalls" | "aborted";
 	tokenUsage: TokenUsage;
+}
+
+/**
+ * The GenerateTreeEditsResponse interface defines the structure of the response object
+ */
+interface GenerateTreeEditsResponse {
+    status: "success" | "failure";
+    errorMessage?: string;
+    tokenUsage: any;
+    diffs?: Diff[];
+}
+
+/**
+ * The editLog is transformed into an array of Diff objects. Each Diff object includes
+ * an id, type (either "error" or "edit"), and description (either the error message or
+ * the edit explanation).
+ */
+export async function generateTreeEditsWithDiff(options: any): Promise<GenerateTreeEditsResponse> {
+    const idGenerator = new IdGenerator();
+	const editLog: EditLog = [];
+	let editCount = 0;
+	let sequentialErrorCount = 0;
+	const simpleSchema = getSimpleSchema(
+		normalizeFieldSchema(options.treeView.schema).allowedTypes,
+	);
+
+	// const simpleSchema = getSimpleSchema(Tree.schema(options.treeNode));
+
+	const tokenUsage = { inputTokens: 0, outputTokens: 0 };
+
+    try {
+        for await (const edit of generateEdits(
+			options,
+			simpleSchema,
+			idGenerator,
+			editLog,
+			options.limiters?.tokenLimits,
+			tokenUsage,
+		)) {
+			try {
+				const result = applyAgentEdit(
+					options.treeView,
+					edit,
+					idGenerator,
+					simpleSchema.definitions,
+					options.validator,
+				);
+				const explanation = result.explanation; // TODO: describeEdit(result, idGenerator);
+				editLog.push({ edit: { ...result, explanation } });
+				sequentialErrorCount = 0;
+			} catch (error: unknown) {
+				if (error instanceof Error) {
+					sequentialErrorCount += 1;
+					editLog.push({ edit, error: error.message });
+					DEBUG_LOG?.push(`Error: ${error.message}`);
+				} else {
+					throw error;
+				}
+			}
+
+			if (options.limiters?.abortController?.signal.aborted === true) {
+				return {
+					status: "failure",
+					errorMessage: "aborted",
+					tokenUsage,
+				};
+			}
+
+			if (
+				sequentialErrorCount >
+				(options.limiters?.maxSequentialErrors ?? Number.POSITIVE_INFINITY)
+			) {
+				return {
+					status: "failure",
+					errorMessage: "tooManyErrors",
+					tokenUsage,
+				};
+			}
+
+			if (++editCount >= (options.limiters?.maxModelCalls ?? Number.POSITIVE_INFINITY)) {
+				return {
+					status: "failure",
+					errorMessage: "tooManyModelCalls",
+					tokenUsage,
+				};
+			}
+		}
+    } catch (error: unknown) {
+		if (error instanceof TokenLimitExceededError) {
+			return {
+				status: "failure",
+				errorMessage: "tokenLimitExceeded",
+				tokenUsage,
+			};
+		}
+		throw error;
+    }
+
+    // Transform editLog into diffs
+    const diffs: Diff[] = editLog.map((log, index) => ({
+        id: `diff-${index}`,
+        type: log.error ? "error" : "edit",
+        description: log.error ? log.error : log.edit.explanation,
+    }));
+
+	if (options.dumpDebugLog ?? false) {
+		console.log(DEBUG_LOG.join("\n\n"));
+		DEBUG_LOG.length = 0;
+	}
+
+    return {
+        status: "success",
+        tokenUsage,
+        diffs,
+    };
 }
 
 /**

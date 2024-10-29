@@ -31,6 +31,7 @@ export {
 	type AiCollabOptions,
 	type AiCollabSuccessResponse,
 	type AiCollabErrorResponse,
+	type Diff,
 	type TokenUsage,
 	type OpenAiClientOptions,
 } from "./aiCollabApi.js";

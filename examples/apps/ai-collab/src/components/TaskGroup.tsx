@@ -39,6 +39,7 @@ import {
 	type SharedTreeAppState,
 } from "@/types/sharedTreeAppSchema";
 import { useSharedTreeRerender } from "@/useSharedTreeRerender";
+import DiffViewer from "./DiffViewer";
 
 export function TaskGroup(props: {
 	treeView: TreeView<typeof SharedTreeAppState>;
@@ -377,6 +378,16 @@ export function TaskGroup(props: {
 					);
 				})}
 			</Stack>
+
+			{/* Add DiffViewer to display diffs */}
+            {props.branchDifferences && props.branchDifferences.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                    <Typography variant="h4" sx={{ mb: 2 }}>
+                        Differences
+                    </Typography>
+                    <DiffViewer diffs={props.branchDifferences} />
+                </Box>
+            )}
 		</Card>
 	);
 }
