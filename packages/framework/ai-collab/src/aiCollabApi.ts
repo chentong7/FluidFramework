@@ -83,3 +83,15 @@ export interface Diff {
 	type: string;
 	description: string;
 }
+
+/**
+ * The GenerateTreeEditsResponse interface defines the structure of the response object
+ *
+ * @alpha
+ */
+export interface GenerateTreeEditsResponse {
+	status: "success" | "failure";
+	errorMessage?: string;
+	tokenUsage: TokenUsage;
+	diffs?: Diff[];
+}

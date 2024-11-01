@@ -5,7 +5,7 @@
 ```ts
 
 // @alpha
-export function aiCollab(options: AiCollabOptions<ImplicitFieldSchema>): Promise<AiCollabSuccessResponse | AiCollabErrorResponse>;
+export function aiCollab(options: AiCollabOptions<ImplicitFieldSchema>): Promise<GenerateTreeEditsResponse>;
 
 // @alpha
 export interface AiCollabErrorResponse {
@@ -120,6 +120,18 @@ export interface DifferenceRemove {
     path: ObjectPath;
     // (undocumented)
     type: "REMOVE";
+}
+
+// @alpha
+export interface GenerateTreeEditsResponse {
+    // (undocumented)
+    diffs?: Diff[];
+    // (undocumented)
+    errorMessage?: string;
+    // (undocumented)
+    status: "success" | "failure";
+    // (undocumented)
+    tokenUsage: TokenUsage;
 }
 
 // @alpha

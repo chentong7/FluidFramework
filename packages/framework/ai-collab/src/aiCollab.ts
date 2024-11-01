@@ -5,12 +5,8 @@
 
 import type { ImplicitFieldSchema } from "@fluidframework/tree";
 
-import type {
-	AiCollabErrorResponse,
-	AiCollabOptions,
-	AiCollabSuccessResponse,
-} from "./aiCollabApi.js";
-import { generateTreeEdits } from "./explicit-strategy/index.js";
+import type { AiCollabOptions, GenerateTreeEditsResponse } from "./aiCollabApi.js";
+import { generateTreeEditsWithDiff } from "./explicit-strategy/index.js";
 
 /**
  * Calls an LLM to modify the provided SharedTree based on the provided users input.
@@ -20,8 +16,8 @@ import { generateTreeEdits } from "./explicit-strategy/index.js";
  */
 export async function aiCollab(
 	options: AiCollabOptions<ImplicitFieldSchema>,
-): Promise<AiCollabSuccessResponse | AiCollabErrorResponse> {
-	const response = await generateTreeEdits({
+): Promise<GenerateTreeEditsResponse> {
+	const response = await generateTreeEditsWithDiff({
 		treeView: options.treeView,
 		validator: options.validator,
 		openAI: options.openAI,

@@ -20,7 +20,12 @@ import type {
 } from "openai/resources/index.mjs";
 import { z } from "zod";
 
-import type { Diff, OpenAiClientOptions, TokenUsage } from "../aiCollabApi.js";
+import type {
+	Diff,
+	GenerateTreeEditsResponse,
+	OpenAiClientOptions,
+	TokenUsage,
+} from "../aiCollabApi.js";
 
 import { applyAgentEdit } from "./agentEditReducer.js";
 import type { EditWrapper, TreeEdit } from "./agentEditTypes.js";
@@ -70,16 +75,6 @@ interface GenerateTreeEditsErrorResponse {
 	status: "failure" | "partial-failure";
 	errorMessage: "tokenLimitExceeded" | "tooManyErrors" | "tooManyModelCalls" | "aborted";
 	tokenUsage: TokenUsage;
-}
-
-/**
- * The GenerateTreeEditsResponse interface defines the structure of the response object
- */
-interface GenerateTreeEditsResponse {
-	status: "success" | "failure";
-	errorMessage?: string;
-	tokenUsage: TokenUsage;
-	diffs?: Diff[];
 }
 
 /**
@@ -173,8 +168,8 @@ export async function generateTreeEditsWithDiff(
 	// Transform editLog into diffs
 	const diffs: Diff[] = editLog.map((log, index) => ({
 		id: `diff-${index}`,
-		type: log.error ? "error" : "edit",
-		description: log.error ? log.error : log.edit.explanation,
+		type: log.error ?? "error" ?? "edit",
+		description: log.error ?? log.edit.explanation ?? "No description available",
 	}));
 
 	if (options.dumpDebugLog ?? false) {

@@ -29,6 +29,7 @@ import { useSnackbar } from "notistack";
 import { OpenAI } from "openai";
 import React, { useState } from "react";
 
+import { DiffViewer } from "./DiffViewer";
 import { TaskCard } from "./TaskCard";
 
 // import { editTaskGroup } from "@/actions/task";
@@ -39,7 +40,6 @@ import {
 	type SharedTreeAppState,
 } from "@/types/sharedTreeAppSchema";
 import { useSharedTreeRerender } from "@/useSharedTreeRerender";
-import DiffViewer from "./DiffViewer";
 
 export function TaskGroup(props: {
 	treeView: TreeView<typeof SharedTreeAppState>;
@@ -233,6 +233,15 @@ export function TaskGroup(props: {
 										variant: "success",
 										autoHideDuration: 5000,
 									});
+									{
+										/* Add DiffViewer to display diffs */
+										<Box sx={{ mt: 4 }}>
+											<Typography variant="h4" sx={{ mb: 2 }}>
+												Differences
+											</Typography>
+											<DiffViewer diffs={response.diffs ?? []} />
+										</Box>;
+									}
 								} else {
 									enqueueSnackbar(
 										`Copilot: Something went wrong processing your request - "${query}"`,
@@ -378,16 +387,6 @@ export function TaskGroup(props: {
 					);
 				})}
 			</Stack>
-
-			{/* Add DiffViewer to display diffs */}
-            {props.branchDifferences && props.branchDifferences.length > 0 && (
-                <Box sx={{ mt: 4 }}>
-                    <Typography variant="h4" sx={{ mb: 2 }}>
-                        Differences
-                    </Typography>
-                    <DiffViewer diffs={props.branchDifferences} />
-                </Box>
-            )}
 		</Card>
 	);
 }
