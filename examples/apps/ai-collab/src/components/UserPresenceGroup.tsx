@@ -5,80 +5,62 @@
 
 "use client";
 
+import type { IPresence } from "@fluidframework/presence/alpha";
 import { Avatar, Badge, styled } from "@mui/material";
 import React, { useEffect, useRef, useState } from "react";
-import { v4 as uuid } from "uuid";
 
-import type { UserPresence } from "@/app/presence";
+import { buildUserPresence } from "@/app/presence";
 import { getProfilePhoto } from "@/infra/authHelper";
 
 interface UserPresenceProps {
-	userPresenceGroup: UserPresence;
+	presence: IPresence;
 }
 
 const UserPresenceGroup: React.FC<UserPresenceProps> = ({
-	userPresenceGroup,
+	presence,
 }): JSX.Element => {
-	const photoUrlsMap = new Map<string, string>();
 	const isFirstRender = useRef(true);
-	const [photoUrls, setPhotoUrls] = useState<string[]>([]);
-	const currentUserId: `id-${string}` = `id-${uuid()}`;
+	const [photoUrls, setPhotoUrls] = useState<Map<string, string>>(new Map());
 
-	/**
-	 * fetch the user's photo if it's spe client, for the tinylicious client, it will use the default photo.
-	 * */
-	const updateUserPresenceGroup = async (): Promise<void> => {
-		const clientId = process.env.NEXT_PUBLIC_SPE_CLIENT_ID;
-		const tenantId = process.env.NEXT_PUBLIC_SPE_ENTRA_TENANT_ID;
-		let photoUrl: string = "";
-
-		// spe client
-		if (tenantId !== undefined && clientId !== undefined) {
-			photoUrl = await getProfilePhoto();
-		}
-		userPresenceGroup.props.onlineUsers.local.set(currentUserId, {
-			value: { photo: photoUrl },
-		});
-		photoUrlsMap.set(currentUserId, photoUrl);
-		setPhotoUrls([...photoUrlsMap.values()]);
-
-		isFirstRender.current = false;
-	};
 
 	useEffect((): void => {
+		const userPresenceGroup = buildUserPresence(presence);
+
+		/**
+		 * fetch the user's photo if it's spe client, for the tinylicious client, it will use the default photo.
+		 * */
+		const updateUserPresenceGroup = async (): Promise<void> => {
+			const clientId = process.env.NEXT_PUBLIC_SPE_CLIENT_ID;
+			const tenantId = process.env.NEXT_PUBLIC_SPE_ENTRA_TENANT_ID;
+			let photoUrl: string = "";
+
+			// spe client
+			if (tenantId !== undefined && clientId !== undefined) {
+				photoUrl = await getProfilePhoto();
+			}
+			userPresenceGroup.props.onlineUsers.local = { photo: photoUrl };
+			setPhotoUrls((current) => { current.set(presence.getMyself().sessionId, photoUrl); return current });
+
+			isFirstRender.current = false;
+		};
+
 		if (isFirstRender.current) {
 			updateUserPresenceGroup().catch((error) => console.error(error));
 		}
 
-		userPresenceGroup.props.onlineUsers.events.on("itemUpdated", (update) => {
-			photoUrlsMap.set(update.key, update.value.value.photo);
-			setPhotoUrls([...photoUrlsMap.values()]);
+		userPresenceGroup.props.onlineUsers.events.on("updated", (update) => {
+			console.debug("Presence - 'updated' event", JSON.stringify(update));
+			setPhotoUrls((current) => { const newMap = new Map(current); newMap.set(update.client.sessionId, update.value.photo); return newMap });
 		});
-		userPresenceGroup.props.onlineUsers.events.on("itemRemoved", (update) => {
-			photoUrlsMap.delete(update.key);
-			setPhotoUrls([...photoUrlsMap.values()]);
+		presence.events.on("attendeeDisconnected", (attendee) => {
+			console.debug("Presence - 'attendeeDisconnected' event", JSON.stringify(attendee));
+			setPhotoUrls((current) => { const newMap = new Map(current); newMap.delete(attendee.sessionId); return newMap });
 		});
 	}, [
 		photoUrls,
-		photoUrlsMap,
-		userPresenceGroup.props.onlineUsers.events,
-		updateUserPresenceGroup,
 		setPhotoUrls,
+		presence,
 	]);
-
-	// Detect when the page is closed
-	useEffect(() => {
-		const handleBeforeUnload = (event: BeforeUnloadEvent): void => {
-			userPresenceGroup.props.onlineUsers.local.delete(currentUserId);
-		};
-
-		window.addEventListener("beforeunload", handleBeforeUnload);
-
-		// Cleanup event listener on unmount
-		return () => {
-			window.removeEventListener("beforeunload", handleBeforeUnload);
-		};
-	});
 
 	const StyledBadge = styled(Badge)(({ theme }) => ({
 		"& .MuiBadge-badge": {
@@ -111,11 +93,11 @@ const UserPresenceGroup: React.FC<UserPresenceProps> = ({
 
 	return (
 		<div>
-			{photoUrls.length === 0 ? (
+			{photoUrls.size === 0 ? (
 				<Avatar alt="User Photo" sx={{ width: 56, height: 56 }} />
 			) : (
 				<>
-					{photoUrls.slice(0, 4).map((photo, index) => (
+					{[...photoUrls.values()].slice(0, 4).map((photo, index) => (
 						<StyledBadge
 							key={index}
 							overlap="circular"
@@ -125,11 +107,11 @@ const UserPresenceGroup: React.FC<UserPresenceProps> = ({
 							<Avatar alt="User Photo" src={photo} sx={{ width: 56, height: 56 }} />
 						</StyledBadge>
 					))}
-					{photoUrls.length > 4 && (
+					{photoUrls.size > 4 && (
 						<Badge
 							overlap="circular"
 							anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-							badgeContent={`+${photoUrls.length - 4}`}
+							badgeContent={`+${photoUrls.size - 4}`}
 							color="primary"
 						>
 							<Avatar alt="More Users" sx={{ width: 56, height: 56 }} />
