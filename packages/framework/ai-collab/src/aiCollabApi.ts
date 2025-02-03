@@ -222,7 +222,7 @@ export interface DifferenceRemove {
 }
 
 /**
- * Represents a change operation between two branches of a tree.
+ * Represents a value within a given tree node being changed to a new value
  * Meaning that an attribute (a shared tree node) was identified as being changed from one value to another.
  *
  * @alpha
