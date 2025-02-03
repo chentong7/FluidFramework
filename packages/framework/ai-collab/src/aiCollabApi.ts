@@ -236,7 +236,7 @@ export interface DifferenceChange {
 }
 
 /**
- * Represents a move operation between two branches of a tree.
+ * Represents a child node being moved to a new index within its respective parent tree array node.
  * Meaning that an object (shared tree node) was identified as being moved from one index to another based on its unique id.
  *
  * @alpha
