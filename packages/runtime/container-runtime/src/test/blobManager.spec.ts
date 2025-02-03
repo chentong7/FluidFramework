@@ -3,7 +3,7 @@
  * Licensed under the MIT License.
  */
 
-import { strict as assert } from "assert";
+import { strict as assert } from "node:assert";
 
 import {
 	IsoBuffer,
@@ -121,7 +121,7 @@ export class MockRuntime
 
 	public getStorage(): IDocumentStorageService {
 		return {
-			createBlob: async (blob) => {
+			createBlob: async (blob: ArrayBufferLike) => {
 				if (this.processing) {
 					return this.storage.createBlob(blob);
 				}
@@ -139,7 +139,7 @@ export class MockRuntime
 				this.blobPs.push(P);
 				return P;
 			},
-			readBlob: async (id) => this.storage.readBlob(id),
+			readBlob: async (id: string) => this.storage.readBlob(id),
 		} as unknown as IDocumentStorageService;
 	}
 
@@ -185,9 +185,9 @@ export class MockRuntime
 
 	public processOps(): void {
 		assert(this.connected || this.ops.length === 0);
-		this.ops.forEach((op) =>
-			this.blobManager.processBlobAttachMessage(op as ISequencedMessageEnvelope, true),
-		);
+		for (const op of this.ops) {
+			this.blobManager.processBlobAttachMessage(op as ISequencedMessageEnvelope, true);
+		}
 		this.ops = [];
 	}
 
@@ -213,7 +213,9 @@ export class MockRuntime
 		const handlePs = this.handlePs;
 		this.handlePs = [];
 		const handles = (await Promise.all(handlePs)) as IFluidHandleInternal<ArrayBufferLike>[];
-		handles.forEach((handle) => handle.attachGraph());
+		for (const handle of handles) {
+			handle.attachGraph();
+		}
 	}
 
 	public async processAll(): Promise<void> {
@@ -232,7 +234,7 @@ export class MockRuntime
 		redirectTable: [string, string][] | undefined;
 	}> {
 		if (this.detachedStorage.blobs.size > 0) {
-			const table = new Map();
+			const table = new Map<string, string>();
 			for (const [detachedId, blob] of this.detachedStorage.blobs) {
 				const { id } = await this.attachedStorage.createBlob(blob);
 				table.set(detachedId, id);
@@ -254,9 +256,11 @@ export class MockRuntime
 		await this.processStashed(processStashedWithRetry);
 		const ops = this.ops;
 		this.ops = [];
-		// TODO: better typing
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-		ops.forEach((op) => this.blobManager.reSubmit((op as any).metadata));
+		for (const op of ops) {
+			// TODO: better typing
+			// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+			this.blobManager.reSubmit((op as any).metadata as Record<string, unknown> | undefined);
+		}
 	}
 
 	public async processStashed(processStashedWithRetry?: boolean): Promise<void> {
@@ -315,7 +319,11 @@ export const validateSummary = (
 			assert.strictEqual(key, redirectTableBlobName);
 			assert(attachment.type === SummaryType.Blob);
 			assert(typeof attachment.content === "string");
-			redirectTable = [...new Map<string, string>(JSON.parse(attachment.content)).entries()];
+			redirectTable = [
+				...new Map<string, string>(
+					JSON.parse(attachment.content) as [string, string][],
+				).entries(),
+			];
 		}
 	}
 	return { ids, redirectTable };
@@ -865,13 +873,13 @@ describe("BlobManager", () => {
 			await runtime.attach();
 			await runtime.connect();
 			const ac = new AbortController();
-			let handleP;
+			let handleP: Promise<IFluidHandleInternal<ArrayBufferLike>> | undefined;
 			try {
 				const blob = IsoBuffer.from("blob", "utf8");
 				handleP = runtime.createBlob(blob, ac.signal);
 				await runtime.processAll();
 				ac.abort();
-			} catch (error: unknown) {
+			} catch {
 				assert.fail("abort after processing should not throw");
 			}
 			assert(handleP);
@@ -918,7 +926,7 @@ describe("BlobManager", () => {
 			await runtime.attach();
 			await runtime.connect();
 			const ac = new AbortController();
-			let handleP;
+			let handleP: Promise<IFluidHandleInternal<ArrayBufferLike>> | undefined;
 			try {
 				handleP = runtime.createBlob(IsoBuffer.from("blob", "utf8"), ac.signal);
 				const p1 = runtime.processBlobs(true);
@@ -941,7 +949,9 @@ describe("BlobManager", () => {
 			}
 			await runtime.connect();
 			runtime.processOps();
-			await assert.rejects(handleP);
+
+			// TODO: `handleP` can be `undefined`; this should be made safer.
+			await assert.rejects(handleP as Promise<IFluidHandleInternal<ArrayBufferLike>>);
 			const summaryData = validateSummary(runtime);
 			assert.strictEqual(summaryData.ids.length, 0);
 			assert.strictEqual(summaryData.redirectTable, undefined);
@@ -1038,7 +1048,7 @@ describe("BlobManager", () => {
 		// Support for this config has been removed.
 		const legacyKey_disableAttachmentBlobSweep =
 			"Fluid.GarbageCollection.DisableAttachmentBlobSweep";
-		[true, undefined].forEach((disableAttachmentBlobsSweep) =>
+		for (const disableAttachmentBlobsSweep of [true, undefined])
 			it(`deletes unused blobs regardless of DisableAttachmentBlobsSweep setting [DisableAttachmentBlobsSweep=${disableAttachmentBlobsSweep}]`, async () => {
 				injectedSettings[legacyKey_disableAttachmentBlobSweep] = disableAttachmentBlobsSweep;
 
@@ -1059,8 +1069,7 @@ describe("BlobManager", () => {
 				runtime.blobManager.deleteSweepReadyNodes([blob2.localGCNodeId]);
 				assert(!redirectTable.has(blob2.localId));
 				assert(!redirectTable.has(blob2.storageId));
-			}),
-		);
+			});
 
 		it("deletes unused de-duped blobs", async () => {
 			await runtime.attach();
