@@ -196,7 +196,7 @@ export interface TokenLimits {
 export type ObjectPath = (string | number)[];
 
 /**
- * Represents a create operation between two branches of a tree.
+ * Represents a new tree node being created and inserted a given parent array node.
  * Meaning that an attribute (a shared tree node) was identified as being created.
  *
  * @alpha
