@@ -208,7 +208,7 @@ export interface DifferenceCreate {
 }
 
 /**
- * Represents a remove operation between two branches of a tree.
+ * Represents a child node being removed (and deleted) from its respective parent array tree node.
  * Meaning that an attribute (a shared tree node) was identified as being deleted.
  * When using object ids, removes are idenitified by an object with a given id no longer existing.
  *
