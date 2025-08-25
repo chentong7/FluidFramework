@@ -16,7 +16,7 @@ export interface ContainerSchema {
     readonly initialObjects: Record<string, SharedObjectKind>;
 }
 
-// @alpha @legacy
+// @beta @legacy
 export function createTreeContainerRuntimeFactory(props: {
     readonly schema: TreeContainerSchema;
     readonly compatibilityMode: CompatibilityMode;
@@ -89,7 +89,7 @@ export type Myself<M extends IMember = IMember> = M & {
     readonly currentConnection: string;
 };
 
-// @alpha @legacy
+// @beta @legacy
 export interface TreeContainerSchema extends ContainerSchema {
     // (undocumented)
     readonly initialObjects: {
